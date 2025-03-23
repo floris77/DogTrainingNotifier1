@@ -32,21 +32,19 @@ final class MatchManager: ObservableObject {
     
     // MARK: - Private Properties
     private let orwejaService: OrwejaService
-    private nonisolated let userDefaults: UserDefaults
+    private let userDefaults: UserDefaults
     private var isOffline = false
     
     // MARK: - Initialization
-    nonisolated init(
+    init(
         orwejaService: OrwejaService = OrwejaService(),
         userDefaults: UserDefaults = .standard
     ) {
         self.orwejaService = orwejaService
         self.userDefaults = userDefaults
-    }
-    
-    // MARK: - Setup
-    func setup() async {
-        await loadCachedMatches()
+        Task {
+            await loadCachedMatches()
+        }
     }
     
     // MARK: - Public Methods
@@ -134,12 +132,60 @@ final class MatchManager: ObservableObject {
         }
     }
     
-    private nonisolated func loadCachedMatches() async {
+    private func loadCachedMatches() async {
         if let data = userDefaults.data(forKey: "cachedMatches"),
            let decoded = try? JSONDecoder().decode([Match].self, from: data) {
-            await MainActor.run {
-                matches = decoded
-            }
+            matches = decoded
         }
+    }
+}
+
+// MARK: - SwiftUI Integration
+final class MatchManagerWrapper: ObservableObject {
+    @Published private var manager: MatchManager
+    
+    init() {
+        self.manager = MatchManager()
+    }
+    
+    var matches: [Match] { manager.matches }
+    var selectedType: MatchType? {
+        get { manager.selectedType }
+        set { manager.selectedType = newValue }
+    }
+    var searchText: String {
+        get { manager.searchText }
+        set { manager.searchText = newValue }
+    }
+    var selectedEnrollmentStatus: EnrollmentStatus? {
+        get { manager.selectedEnrollmentStatus }
+        set { manager.selectedEnrollmentStatus = newValue }
+    }
+    var isLoading: Bool { manager.isLoading }
+    var error: Error? { manager.error }
+    var registeredMatches: [Match] { manager.registeredMatches }
+    var lastRefreshDate: Date? { manager.lastRefreshDate }
+    
+    var filteredMatches: [Match] { manager.filteredMatches }
+    var upcomingMatches: [Match] { manager.upcomingMatches }
+    
+    func retryFetch() {
+        manager.retryFetch()
+    }
+    
+    func registerForMatch(_ match: Match) {
+        Task {
+            await manager.registerForMatch(match)
+        }
+    }
+    
+    func unregisterFromMatch(_ match: Match) {
+        Task {
+            await manager.unregisterFromMatch(match)
+        }
+    }
+    
+    func isRegistered(for match: Match) -> Bool {
+        manager.isRegistered(for: match)
     }
 }
