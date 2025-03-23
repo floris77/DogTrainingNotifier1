@@ -1,6 +1,23 @@
 import Foundation
 import SwiftUI
 
+enum MatchError: LocalizedError {
+    case networkError
+    case invalidData
+    case locationError
+    
+    var errorDescription: String? {
+        switch self {
+        case .networkError:
+            return "Er is een probleem met de internetverbinding. Controleer je verbinding en probeer het opnieuw."
+        case .invalidData:
+            return "De wedstrijdgegevens zijn niet correct. Probeer het later opnieuw."
+        case .locationError:
+            return "Er is een probleem met de locatie. Controleer of locatietoegang is ingeschakeld."
+        }
+    }
+}
+
 @MainActor
 final class MatchManager: ObservableObject {
     // MARK: - Published Properties
@@ -14,6 +31,7 @@ final class MatchManager: ObservableObject {
     
     // MARK: - Private Properties
     private let orwejaService: OrwejaService
+    private var isOffline = false
     
     // MARK: - Initialization
     init(orwejaService: OrwejaService = OrwejaService()) {
@@ -22,13 +40,21 @@ final class MatchManager: ObservableObject {
     
     // MARK: - Public Methods
     func fetchMatches() async {
+        guard !isLoading else { return }
+        
         isLoading = true
         error = nil
         
         do {
+            let oldMatches = Set(matches.map(\.id))
             matches = try await orwejaService.fetchMatches()
+            lastRefreshDate = Date()
+            isOffline = false
+            cacheMatches()
         } catch {
-            self.error = error
+            self.error = MatchError.networkError
+            isOffline = true
+            loadCachedMatches()
         }
         
         isLoading = false
@@ -89,5 +115,18 @@ final class MatchManager: ObservableObject {
     
     private func setError(_ error: Error) {
         self.error = error
+    }
+    
+    private func cacheMatches() {
+        if let encoded = try? JSONEncoder().encode(matches) {
+            userDefaults.set(encoded, forKey: "cachedMatches")
+        }
+    }
+    
+    private func loadCachedMatches() {
+        if let data = userDefaults.data(forKey: "cachedMatches"),
+           let decoded = try? JSONDecoder().decode([Match].self, from: data) {
+            matches = decoded
+        }
     }
 }
