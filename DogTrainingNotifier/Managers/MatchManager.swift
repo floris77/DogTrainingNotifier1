@@ -36,13 +36,15 @@ final class MatchManager: ObservableObject {
     private var isOffline = false
     
     // MARK: - Initialization
-    init(
+    nonisolated init(
         orwejaService: OrwejaService = OrwejaService(),
         userDefaults: UserDefaults = .standard
     ) {
         self.orwejaService = orwejaService
         self.userDefaults = userDefaults
-        loadCachedMatches()
+        Task { @MainActor in
+            loadCachedMatches()
+        }
     }
     
     // MARK: - Public Methods

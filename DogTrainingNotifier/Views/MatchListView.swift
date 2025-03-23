@@ -4,14 +4,13 @@ struct MatchListView: View {
     @EnvironmentObject private var matchManager: MatchManager
     @State private var showingFilters = false
     @State private var showingError = false
+    @State private var selectedMatch: Match?
     
     var body: some View {
         NavigationView {
             ZStack {
                 if matchManager.isLoading {
-                    ProgressView("Wedstrijden laden...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(Color(.systemBackground))
+                    LoadingView(message: "Wedstrijden laden...")
                 } else {
                     List {
                         if let error = matchManager.error {
@@ -29,22 +28,17 @@ struct MatchListView: View {
                             )
                         } else {
                             ForEach(matchManager.filteredMatches) { match in
-                                NavigationLink(destination: MatchDetailView(match: match)) {
-                                    MatchRowView(match: match)
-                                }
+                                MatchRowView(match: match)
+                                    .contentShape(Rectangle())
+                                    .onTapGesture {
+                                        selectedMatch = match
+                                    }
                             }
                         }
                     }
                     .listStyle(.plain)
                     .refreshable {
                         await matchManager.fetchMatches()
-                    }
-                    .overlay {
-                        if matchManager.isLoading {
-                            ProgressView("Wedstrijden laden...")
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                .background(Color(.systemBackground))
-                        }
                     }
                 }
             }
@@ -55,11 +49,15 @@ struct MatchListView: View {
                         showingFilters.toggle()
                     } label: {
                         Image(systemName: "line.3.horizontal.decrease.circle")
+                            .font(.title3)
                     }
                 }
             }
             .sheet(isPresented: $showingFilters) {
                 FilterView()
+            }
+            .sheet(item: $selectedMatch) { match in
+                MatchDetailView(match: match)
             }
         }
     }
@@ -99,7 +97,7 @@ struct EmptyStateView: View {
     var body: some View {
         VStack(spacing: 16) {
             Image(systemName: "doc.text.magnifyingglass")
-                .font(.largeTitle)
+                .font(.system(size: 50))
                 .foregroundColor(.secondary)
             
             Text(title)
@@ -109,7 +107,9 @@ struct EmptyStateView: View {
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
         }
-        .padding()
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
     }
 }
 
