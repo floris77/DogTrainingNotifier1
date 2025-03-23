@@ -145,7 +145,7 @@ final class MatchManager: ObservableObject {
 final class MatchManagerWrapper: ObservableObject {
     @Published private var manager: MatchManager
     
-    init() {
+    nonisolated init() {
         self.manager = MatchManager()
     }
     

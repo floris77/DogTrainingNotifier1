@@ -1,5 +1,4 @@
 import Foundation
-
 import SwiftUI
 
 class SessionDelegate: NSObject, URLSessionDelegate {
@@ -14,7 +13,7 @@ class SessionDelegate: NSObject, URLSessionDelegate {
     }
 }
 
-final class OrwejaService: ObservableObject {
+final class OrwejaService {
     private let baseUrl = "https://www.orweja.nl"
     private let urls = [
         "http://www.orweja.nl/agenda/",
