@@ -14,7 +14,6 @@ class SessionDelegate: NSObject, URLSessionDelegate {
     }
 }
 
-@MainActor
 final class OrwejaService: ObservableObject {
     private let baseUrl = "https://www.orweja.nl"
     private let urls = [

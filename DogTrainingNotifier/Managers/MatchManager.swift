@@ -141,6 +141,7 @@ final class MatchManager: ObservableObject {
 }
 
 // MARK: - SwiftUI Integration
+@MainActor
 final class MatchManagerWrapper: ObservableObject {
     @Published private var manager: MatchManager
     
