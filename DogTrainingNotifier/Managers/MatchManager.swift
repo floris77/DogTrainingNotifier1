@@ -32,7 +32,7 @@ final class MatchManager: ObservableObject {
     
     // MARK: - Private Properties
     private let orwejaService: OrwejaService
-    private let userDefaults: UserDefaults
+    private nonisolated let userDefaults: UserDefaults
     private var isOffline = false
     
     // MARK: - Initialization
@@ -43,7 +43,7 @@ final class MatchManager: ObservableObject {
         self.orwejaService = orwejaService
         self.userDefaults = userDefaults
         Task { @MainActor in
-            loadCachedMatches()
+            await loadCachedMatches()
         }
     }
     
@@ -59,11 +59,11 @@ final class MatchManager: ObservableObject {
             matches = try await orwejaService.fetchMatches()
             lastRefreshDate = Date()
             isOffline = false
-            cacheMatches()
+            await cacheMatches()
         } catch {
             self.error = MatchError.networkError
             isOffline = true
-            loadCachedMatches()
+            await loadCachedMatches()
         }
         
         isLoading = false
@@ -126,16 +126,18 @@ final class MatchManager: ObservableObject {
         self.error = error
     }
     
-    private func cacheMatches() {
+    private func cacheMatches() async {
         if let encoded = try? JSONEncoder().encode(matches) {
             userDefaults.set(encoded, forKey: "cachedMatches")
         }
     }
     
-    private func loadCachedMatches() {
+    private nonisolated func loadCachedMatches() async {
         if let data = userDefaults.data(forKey: "cachedMatches"),
            let decoded = try? JSONDecoder().decode([Match].self, from: data) {
-            matches = decoded
+            await MainActor.run {
+                matches = decoded
+            }
         }
     }
 }
