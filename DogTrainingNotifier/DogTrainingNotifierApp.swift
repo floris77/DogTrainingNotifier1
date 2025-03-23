@@ -8,6 +8,9 @@ struct DogTrainingNotifierApp: App {
         WindowGroup {
             ContentView()
                 .environmentObject(matchManager)
+                .task {
+                    await matchManager.setup()
+                }
         }
     }
 }

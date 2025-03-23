@@ -42,9 +42,11 @@ final class MatchManager: ObservableObject {
     ) {
         self.orwejaService = orwejaService
         self.userDefaults = userDefaults
-        Task { @MainActor in
-            await loadCachedMatches()
-        }
+    }
+    
+    // MARK: - Setup
+    func setup() async {
+        await loadCachedMatches()
     }
     
     // MARK: - Public Methods
