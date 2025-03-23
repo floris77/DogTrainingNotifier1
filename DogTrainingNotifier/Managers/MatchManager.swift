@@ -28,14 +28,21 @@ final class MatchManager: ObservableObject {
     @Published private(set) var isLoading: Bool = false
     @Published private(set) var error: Error?
     @Published private(set) var registeredMatches: [Match] = []
+    @Published private(set) var lastRefreshDate: Date?
     
     // MARK: - Private Properties
     private let orwejaService: OrwejaService
+    private let userDefaults: UserDefaults
     private var isOffline = false
     
     // MARK: - Initialization
-    init(orwejaService: OrwejaService = OrwejaService()) {
+    init(
+        orwejaService: OrwejaService = OrwejaService(),
+        userDefaults: UserDefaults = .standard
+    ) {
         self.orwejaService = orwejaService
+        self.userDefaults = userDefaults
+        loadCachedMatches()
     }
     
     // MARK: - Public Methods
@@ -60,7 +67,7 @@ final class MatchManager: ObservableObject {
         isLoading = false
     }
     
-    func filteredMatches() -> [Match] {
+    var filteredMatches: [Match] {
         matches.filter { match in
             var typeMatches = true
             var statusMatches = true
@@ -84,7 +91,7 @@ final class MatchManager: ObservableObject {
         }.sorted { $0.matchDate < $1.matchDate }
     }
     
-    func upcomingMatches() -> [Match] {
+    var upcomingMatches: [Match] {
         matches.filter { $0.enrollmentStatus == .upcoming }
                .sorted { $0.matchDate < $1.matchDate }
     }
